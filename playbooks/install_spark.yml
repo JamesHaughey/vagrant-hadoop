@@ -1,18 +1,12 @@
 - name: Install Spark
-  hosts: hadoopcontroller
-  remote_user: tiago
+  hosts: all
   become: true
-  become_user: root
   vars:
     spark_vars:
-      SPARK_HOME: /usr/local/spark-3.0.1
+      SPARK_HOME: /usr/local/spark-3.0.2
       PATH: $PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$SPARK_HOME/bin
       HADOOP_CONF_DIR: $HADOOP_HOME/etc/hadoop
       LD_LIBRARY_PATH: $HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
-    bolt_ips:
-      node-master: 192.168.1.201
-      node1: 192.168.1.202
-      node2: 192.168.1.203
     spark_config_files:
       - spark-defaults.conf
     hadoop_users:
@@ -22,19 +16,27 @@
       - mapred
 
   tasks:
+    - name: Check Spark folder exists
+      stat:
+        path: /usr/local/spark-3.0.2
+      register: spark_folder
+
     - name: Download Spark tar
       get_url:
-        url: https://mirrors.ukfast.co.uk/sites/ftp.apache.org/spark/spark-3.0.1/spark-3.0.1-bin-hadoop3.2.tgz
-        dest: /tmp/spark-3.0.1-bin-hadoop3.2.tgz
+        url: https://downloads.apache.org/spark/spark-3.0.2/spark-3.0.2-bin-hadoop3.2.tgz
+        dest: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
+      when: not spark_folder.stat.exists
 
     - name: Extract Spark tar
       unarchive:
         remote_src: yes
-        src: /tmp/spark-3.0.1-bin-hadoop3.2.tgz
+        src: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
         dest: /usr/local/
+      when: not spark_folder.stat.exists
 
     - name: Move Spark folder
-      command: mv /usr/local/spark-3.0.1-bin-hadoop3.2/ /usr/local/spark-3.0.1/
+      command: mv /usr/local/spark-3.0.2-bin-hadoop3.2/ /usr/local/spark-3.0.2/
+      when: not spark_folder.stat.exists
 
     - name: Remove Path variable
       lineinfile:
@@ -53,5 +55,5 @@
     - name: Write Spark config files
       template:
         src: "templates/{{ item }}"
-        dest: "/usr/local/spark-3.0.1/conf/{{ item }}"
+        dest: "/usr/local/spark-3.0.2/conf/{{ item }}"
       loop: "{{ spark_config_files }}"
