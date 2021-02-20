@@ -85,16 +85,23 @@
         line: "{{ item.key }}={{ item.value }}"
       loop: "{{ system_vars | dict2items }}"
 
-    # - name: Download Hadoop tar
-    #   get_url:
-    #     url: https://mirrors.ukfast.co.uk/sites/ftp.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
-    #     dest: /tmp/hadoop-3.3.0.tar.gz
+    - name: Check hadoop folder exists
+      stat:
+        path: /usr/local/hadoop-3.3.0
+      register: hadoop_folder
 
-    # - name: Extract Hadoop tar
-    #   unarchive:
-    #     remote_src: yes
-    #     src: /tmp/hadoop-3.3.0.tar.gz
-    #     dest: /usr/local/
+    - name: Download Hadoop tar
+      get_url:
+        url: https://mirrors.ukfast.co.uk/sites/ftp.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
+        dest: /tmp/hadoop-3.3.0.tar.gz
+      when: not hadoop_folder.stat.exists
+
+    - name: Extract Hadoop tar
+      unarchive:
+        remote_src: yes
+        src: /tmp/hadoop-3.3.0.tar.gz
+        dest: /usr/local/
+      when: not hadoop_folder.stat.exists
 
     - name: Chown Hadoop Folder
       file:
