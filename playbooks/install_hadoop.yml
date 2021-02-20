@@ -1,0 +1,136 @@
+- name: Install Hadoop 
+  hosts: all
+  become: true
+  vars:
+    system_vars:
+      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64/jre
+    hadoop_vars:
+      HADOOP_HOME: /usr/local/hadoop-3.3.0
+      PATH: $PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+    node_ips:
+      node-master: "{{ controller_ip }}"
+      node1: "{{ node1_ip }}"
+      node2: "{{ node2_ip }}"
+    hadoop_users:
+      - hadoop
+      - hdfs
+      - yarn
+      - mapred
+    config_files:
+      - core-site.xml
+      - hdfs-site.xml
+      - mapred-site.xml
+      - yarn-site.xml
+    key_name: id_ed25519
+
+  tasks:
+    - name: Write /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^{{ item.value }}"
+        line: "{{ item.value }}    {{ item.key }}"
+      loop: "{{  node_ips | dict2items  }}"
+    
+    - name: Add Debian Repo
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      loop:
+        - deb http://ftp.us.debian.org/debian buster main
+        - deb http://security.debian.org/debian-security stretch/updates main
+
+    - name: Install packages
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        state: latest
+        name:
+          - openjdk-8-jdk
+          - unzip
+          - tar
+          - cloud-init
+          - qemu-guest-agent
+
+    - name: Create Hadoop Group
+      group:
+        name: hadoop
+        state: present
+
+    - name: Create Hadoop Users
+      user:
+        name: "{{ item }}"
+        state: present
+        groups: hadoop
+        shell: /bin/bash
+      loop: "{{ hadoop_users }}"
+    
+    - name: Add public key to authorized keys
+      ansible.posix.authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ lookup('file', './files/{{ key_name }}.pub') }}"
+      loop: "{{ hadoop_users }}"
+
+    - name: Add hadoop vars
+      lineinfile:
+        path: "/home/{{ item[0] }}/.profile"
+        regexp: "^export {{ item[1].key }}="
+        line: "export {{ item[1].key }}={{ item[1].value }}"
+      loop: "{{  hadoop_users |product(hadoop_vars | dict2items)|list  }}"
+
+    - name: Add System vars
+      lineinfile:
+        path: "/etc/environment"
+        regexp: "^export {{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+      loop: "{{ system_vars | dict2items }}"
+
+    # - name: Download Hadoop tar
+    #   get_url:
+    #     url: https://mirrors.ukfast.co.uk/sites/ftp.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
+    #     dest: /tmp/hadoop-3.3.0.tar.gz
+
+    # - name: Extract Hadoop tar
+    #   unarchive:
+    #     remote_src: yes
+    #     src: /tmp/hadoop-3.3.0.tar.gz
+    #     dest: /usr/local/
+
+    - name: Chown Hadoop Folder
+      file:
+        path: /usr/local/hadoop-3.3.0
+        state: directory
+        recurse: yes
+        owner: hadoop
+        group: hadoop
+        mode: '0775'
+
+    - name: Create HDFS Data Folder
+      file:
+        path: /usr/local/hadoop/data
+        state: directory
+        owner: hdfs
+        group: hadoop
+        mode: '0775'
+
+    - name: Write hadoop config files
+      template:
+        src: "templates/{{ item }}"
+        dest: "/usr/local/hadoop-3.3.0/etc/hadoop/{{ item }}"
+      loop: "{{ config_files }}"
+
+    - name: Copy private key to Hadoop Users
+      copy:
+        src: "files/{{ key_name }}"
+        dest: "/home/{{ item }}/.ssh/{{ key_name }}"
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0600'
+      loop: "{{ hadoop_users }}"
+
+    - name: Write Workers file
+      lineinfile:
+        path: "/usr/local/hadoop-3.3.0/etc/hadoop/workers"
+        regexp: "^{{ item.key }}"
+        line: "{{ item.key }}"
+      loop: "{{  node_ips | dict2items  }}"

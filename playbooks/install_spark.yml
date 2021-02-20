@@ -1,0 +1,57 @@
+- name: Install Spark
+  hosts: hadoopcontroller
+  remote_user: tiago
+  become: true
+  become_user: root
+  vars:
+    spark_vars:
+      SPARK_HOME: /usr/local/spark-3.0.1
+      PATH: $PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$SPARK_HOME/bin
+      HADOOP_CONF_DIR: $HADOOP_HOME/etc/hadoop
+      LD_LIBRARY_PATH: $HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
+    bolt_ips:
+      node-master: 192.168.1.201
+      node1: 192.168.1.202
+      node2: 192.168.1.203
+    spark_config_files:
+      - spark-defaults.conf
+    hadoop_users:
+      - hadoop
+      - hdfs
+      - yarn
+      - mapred
+
+  tasks:
+    - name: Download Spark tar
+      get_url:
+        url: https://mirrors.ukfast.co.uk/sites/ftp.apache.org/spark/spark-3.0.1/spark-3.0.1-bin-hadoop3.2.tgz
+        dest: /tmp/spark-3.0.1-bin-hadoop3.2.tgz
+
+    - name: Extract Spark tar
+      unarchive:
+        remote_src: yes
+        src: /tmp/spark-3.0.1-bin-hadoop3.2.tgz
+        dest: /usr/local/
+
+    - name: Move Spark folder
+      command: mv /usr/local/spark-3.0.1-bin-hadoop3.2/ /usr/local/spark-3.0.1/
+
+    - name: Remove Path variable
+      lineinfile:
+        path: "/home/{{ item }}/.profile"
+        regexp: "^export PATH="
+        state: absent
+      loop: "{{ hadoop_users }}"
+
+    - name: Add Spark vars
+      lineinfile:
+        path: "/home/{{ item[0] }}/.profile"
+        regexp: "^export {{ item[1].key }}="
+        line: "export {{ item[1].key }}={{ item[1].value }}"
+      loop: "{{  hadoop_users |product(spark_vars | dict2items)|list  }}"
+
+    - name: Write Spark config files
+      template:
+        src: "templates/{{ item }}"
+        dest: "/usr/local/spark-3.0.1/conf/{{ item }}"
+      loop: "{{ spark_config_files }}"
