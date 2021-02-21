@@ -9,8 +9,8 @@
       PATH: $PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
     node_ips:
       node-master: "{{ controller_ip }}"
-      node1: "{{ node1_ip }}"
-      node2: "{{ node2_ip }}"
+      node-1: "{{ node1_ip }}"
+      node-2: "{{ node2_ip }}"
     hadoop_users:
       - hadoop
       - hdfs
@@ -24,6 +24,12 @@
     key_name: id_ed25519
 
   tasks:
+    - name: Remove host loopback
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^127.0.2.1"
+        state: absent
+
     - name: Write /etc/hosts file
       lineinfile:
         path: /etc/hosts
@@ -90,9 +96,15 @@
         path: /usr/local/hadoop-3.3.0
       register: hadoop_folder
 
-    - name: Download Hadoop tar
-      get_url:
-        url: https://mirrors.ukfast.co.uk/sites/ftp.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
+    # - name: Download Hadoop tar
+    #   get_url:
+    #     url: https://downloads.apache.org/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
+    #     dest: /tmp/hadoop-3.3.0.tar.gz
+    #   when: not hadoop_folder.stat.exists
+
+    - name: Copy Hadoop Tar
+      copy:
+        src: files/hadoop-3.3.0.tar.gz
         dest: /tmp/hadoop-3.3.0.tar.gz
       when: not hadoop_folder.stat.exists
 
@@ -102,6 +114,14 @@
         src: /tmp/hadoop-3.3.0.tar.gz
         dest: /usr/local/
       when: not hadoop_folder.stat.exists
+
+    - name: Create Hadoop Logs Folder
+      file:
+        path: /usr/local/hadoop-3.3.0/logs
+        state: directory
+        owner: hadoop
+        group: hadoop
+        mode: '0775'
 
     - name: Chown Hadoop Folder
       file:

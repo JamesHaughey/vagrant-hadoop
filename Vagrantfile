@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "hadoop-controller" do |master|
     master.vm.box = IMAGE_NAME
     master.vm.network "private_network", ip: "192.168.50.10"
-    master.vm.hostname = "hadoop-controller"
+    master.vm.hostname = "node-master"
 
     master.vm.provision "ansible_hadoop", type:"ansible" do |ansible|
       ansible.playbook = "playbooks/install_hadoop.yml"

@@ -1,0 +1,10 @@
+hdfs namenode -format
+start-dfs.sh
+hdfs dfs -mkdir -p /user/hadoop
+hdfs dfs -chown hadoop:hadoop /user/hadoop
+hdfs dfs -chmod 775 /user/hadoop
+hdfs dfs -mkdir -p /spark-logs
+hdfs dfs -chown hadoop:hadoop /spark-logs
+hdfs dfs -chmod 775 /spark-logs
+hdfs dfs -chown hdfs:hadoop /
+hdfs dfs -chmod 775 /

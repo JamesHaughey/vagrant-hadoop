@@ -21,9 +21,15 @@
         path: /usr/local/spark-3.0.2
       register: spark_folder
 
-    - name: Download Spark tar
-      get_url:
-        url: https://downloads.apache.org/spark/spark-3.0.2/spark-3.0.2-bin-hadoop3.2.tgz
+    # - name: Download Spark tar
+    #   get_url:
+    #     url: https://downloads.apache.org/spark/spark-3.0.2/spark-3.0.2-bin-hadoop3.2.tgz
+    #     dest: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
+    #   when: not spark_folder.stat.exists
+
+    - name: Copy Spark Tar
+      copy:
+        src: files/spark-3.0.2-bin-hadoop3.2.tgz
         dest: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
       when: not spark_folder.stat.exists
 
