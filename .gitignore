@@ -6,3 +6,7 @@
 
 # SSH Keys
 id_*
+
+# Tar files
+*.tar.gz
+*.tgz
