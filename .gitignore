@@ -1,0 +1,12 @@
+# General
+.vagrant/
+
+# Log files (if you are creating logs in debug mode, uncomment this)
+# *.log
+
+# SSH Keys
+id_*
+
+# Tar files
+*.tar.gz
+*.tgz

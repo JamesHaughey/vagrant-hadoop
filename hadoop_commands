@@ -1,0 +1,7 @@
+hdfs dfs -mkdir books
+wget -O alice.txt https://www.gutenberg.org/files/11/11-0.txt
+wget -O holmes.txt https://www.gutenberg.org/files/1661/1661-0.txt
+wget -O frankenstein.txt https://www.gutenberg.org/files/84/84-0.txt
+hdfs dfs -put alice.txt holmes.txt frankenstein.txt books
+
+yarn jar /usr/local/hadoop-3.3.0/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.0.jar wordcount "books/*" output

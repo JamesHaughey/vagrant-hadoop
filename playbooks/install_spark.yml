@@ -1,0 +1,65 @@
+- name: Install Spark
+  hosts: all
+  become: true
+  vars:
+    spark_vars:
+      SPARK_HOME: /usr/local/spark-3.0.2
+      PATH: $PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$SPARK_HOME/bin
+      HADOOP_CONF_DIR: $HADOOP_HOME/etc/hadoop
+      LD_LIBRARY_PATH: $HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
+    spark_config_files:
+      - spark-defaults.conf
+    hadoop_users:
+      - hadoop
+      - hdfs
+      - yarn
+      - mapred
+
+  tasks:
+    - name: Check Spark folder exists
+      stat:
+        path: /usr/local/spark-3.0.2
+      register: spark_folder
+
+    # - name: Download Spark tar
+    #   get_url:
+    #     url: https://downloads.apache.org/spark/spark-3.0.2/spark-3.0.2-bin-hadoop3.2.tgz
+    #     dest: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
+    #   when: not spark_folder.stat.exists
+
+    - name: Copy Spark Tar
+      copy:
+        src: files/spark-3.0.2-bin-hadoop3.2.tgz
+        dest: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
+      when: not spark_folder.stat.exists
+
+    - name: Extract Spark tar
+      unarchive:
+        remote_src: yes
+        src: /tmp/spark-3.0.2-bin-hadoop3.2.tgz
+        dest: /usr/local/
+      when: not spark_folder.stat.exists
+
+    - name: Move Spark folder
+      command: mv /usr/local/spark-3.0.2-bin-hadoop3.2/ /usr/local/spark-3.0.2/
+      when: not spark_folder.stat.exists
+
+    - name: Remove Path variable
+      lineinfile:
+        path: "/home/{{ item }}/.profile"
+        regexp: "^export PATH="
+        state: absent
+      loop: "{{ hadoop_users }}"
+
+    - name: Add Spark vars
+      lineinfile:
+        path: "/home/{{ item[0] }}/.profile"
+        regexp: "^export {{ item[1].key }}="
+        line: "export {{ item[1].key }}={{ item[1].value }}"
+      loop: "{{  hadoop_users |product(spark_vars | dict2items)|list  }}"
+
+    - name: Write Spark config files
+      template:
+        src: "templates/{{ item }}"
+        dest: "/usr/local/spark-3.0.2/conf/{{ item }}"
+      loop: "{{ spark_config_files }}"
