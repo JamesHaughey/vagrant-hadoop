@@ -1,0 +1,27 @@
+###########################################################################
+- name: Setup DFS & Yarn Services
+  hosts: all
+  become: true
+  vars:
+    services:
+      - dfs
+      - yarn
+  environment:
+    JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64/jre
+
+  tasks:
+    - name: Write Service Unit Files
+      template:
+        src: "templates/{{ item }}.service"
+        dest: "/etc/systemd/system/{{ item }}.service"
+      loop: "{{ services }}"
+
+    - name: Enable Services
+      service:
+        name: "{{ item }}"
+        enabled: yes
+      loop: "{{ services }}"
+
+    # - name: Reboot post install 
+    #   reboot:
+    #     pre_reboot_delay: 0

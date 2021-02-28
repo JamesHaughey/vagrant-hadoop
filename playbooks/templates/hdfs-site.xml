@@ -33,6 +33,6 @@
     </property>
     <property>
             <name>dfs.namenode.secondary.http-address</name>
-            <value>node-master:50090</value>
+            <value>hadoop-controller-node:50090</value>
     </property>
 </configuration>
