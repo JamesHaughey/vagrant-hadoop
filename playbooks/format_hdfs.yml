@@ -1,0 +1,11 @@
+###########################################################################
+- name: Setup DFS & Yarn Services
+  hosts: all
+  remote_user: hdfs
+
+  tasks:
+    - name: Format DFS
+      become_user: hdfs
+      become: yes
+      become_method: su
+      command: /usr/local/hadoop-3.3.0/bin/hdfs namenode -format

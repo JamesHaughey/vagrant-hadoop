@@ -8,9 +8,9 @@
       HADOOP_HOME: /usr/local/hadoop-3.3.0
       PATH: $PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
     node_ips:
-      node-master: "{{ controller_ip }}"
-      node-1: "{{ node1_ip }}"
-      node-2: "{{ node2_ip }}"
+      hadoop-controller-node: "{{ controller_node_ip }}"
+      hadoop-node-1: "{{ node_1_ip }}"
+      hadoop-node-2: "{{ node_2_ip }}"
     hadoop_users:
       - hadoop
       - hdfs
@@ -115,19 +115,20 @@
         dest: /usr/local/
       when: not hadoop_folder.stat.exists
 
-    - name: Create Hadoop Logs Folder
-      file:
-        path: /usr/local/hadoop-3.3.0/logs
-        state: directory
-        owner: hadoop
-        group: hadoop
-        mode: '0775'
-
     - name: Chown Hadoop Folder
       file:
         path: /usr/local/hadoop-3.3.0
         state: directory
         recurse: yes
+        owner: hadoop
+        group: hadoop
+        mode: '0775'
+      when: not hadoop_folder.stat.exists
+
+    - name: Create Hadoop Logs Folder
+      file:
+        path: /usr/local/hadoop-3.3.0/logs
+        state: directory
         owner: hadoop
         group: hadoop
         mode: '0775'

@@ -9,6 +9,7 @@
       LD_LIBRARY_PATH: $HADOOP_HOME/lib/native:$LD_LIBRARY_PATH
     spark_config_files:
       - spark-defaults.conf
+      - spark-env.sh
     hadoop_users:
       - hadoop
       - hdfs

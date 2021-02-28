@@ -20,7 +20,7 @@
 
     <property>
             <name>yarn.resourcemanager.hostname</name>
-            <value>node-master</value>
+            <value>hadoop-controller-node</value>
     </property>
 
     <property>

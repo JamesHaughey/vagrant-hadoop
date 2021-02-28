@@ -1,0 +1,19 @@
+[Unit]
+Description=Hadoop DFS namenode and datanode
+After=network.target
+
+[Service]
+User=hdfs
+Group=hadoop
+Type=forking
+ExecStart=/usr/local/hadoop-3.3.0/sbin/start-dfs.sh
+ExecStop=/usr/local/hadoop-3.3.0/sbin/stop-dfs.sh
+WorkingDirectory=/usr/local/hadoop-3.3.0
+Environment=JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+Environment=HADOOP_HOME=/usr/local/hadoop-3.3.0
+TimeoutStartSec=2min
+Restart=on-failure
+PIDFile=/tmp/hadoop-hdfs-namenode.pid
+
+[Install]
+WantedBy=multi-user.target
